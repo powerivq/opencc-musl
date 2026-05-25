@@ -20,29 +20,40 @@ RUN cmake -S . -B build -G Ninja \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX=/opt/opencc \
     -DBUILD_SHARED_LIBS=OFF \
+    -DBUILD_OPENCC_JIEBA_PLUGIN=ON \
     -DBUILD_DOCUMENTATION=OFF \
     -DBUILD_TESTING=OFF \
  && cmake --build build \
  && cmake --install build
 
-RUN mkdir -p /out/bin /out/share/opencc \
+RUN mkdir -p /out/bin /out/lib/opencc/plugins /out/share/opencc \
  && cp /opt/opencc/bin/opencc /out/bin/opencc \
+ && cp -R /opt/opencc/lib/opencc/plugins/. /out/lib/opencc/plugins/ \
  && cp -R /opt/opencc/share/opencc/. /out/share/opencc/ \
  && chmod +x /out/bin/opencc \
  && test -f /out/share/opencc/s2tw.json \
- && test -f /out/share/opencc/s2hk.json
+ && test -f /out/share/opencc/s2hk.json \
+ && test -f /out/share/opencc/s2tw_jieba.json \
+ && test -f /out/share/opencc/s2hk_jieba.json \
+ && test -f /out/share/opencc/jieba_dict/jieba_merged.ocd2 \
+ && test -f /out/lib/opencc/plugins/libopencc-jieba.so
 
 FROM alpine:3.20 AS runtime
 
 RUN apk add --no-cache libstdc++
 COPY --from=builder /out/bin/opencc /usr/local/bin/opencc
+COPY --from=builder /out/lib/opencc/plugins /usr/local/lib/opencc/plugins
 COPY --from=builder /out/share/opencc /usr/local/share/opencc
 
 ENV OPENCC_VERSION=${OPENCC_VERSION}
+ENV OPENCC_DATA_DIR=/usr/local/share/opencc
+ENV OPENCC_SEGMENTATION_PLUGIN_PATH=/usr/local/lib/opencc/plugins
 
 RUN opencc --version \
  && printf '%s\n' '汉字 银行 优惠 开户奖励' | opencc -c /usr/local/share/opencc/s2tw.json \
- && printf '%s\n' '汉字 银行 优惠 开户奖励' | opencc -c /usr/local/share/opencc/s2hk.json
+ && printf '%s\n' '汉字 银行 优惠 开户奖励' | opencc -c /usr/local/share/opencc/s2hk.json \
+ && printf '%s\n' '汉字 银行 优惠 开户奖励' | opencc -c /usr/local/share/opencc/s2tw_jieba.json \
+ && printf '%s\n' '汉字 银行 优惠 开户奖励' | opencc -c /usr/local/share/opencc/s2hk_jieba.json
 
 FROM scratch AS artifact
 COPY --from=builder /out /
