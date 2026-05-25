@@ -26,5 +26,5 @@ issue if BYVoid/OpenCC publishes a newer `ver.*` tag.
 
 1. Check the latest upstream tag.
 2. Run the `release` workflow with the new `opencc_version`.
-3. Publish a new release tag such as `v1.3.2-powerivq.1`.
+3. Publish a new release tag such as `1.3.2`.
 4. Update the consuming WordPress Dockerfile to the new release tag and SHA256s.
