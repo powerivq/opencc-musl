@@ -1,0 +1,73 @@
+name: check upstream OpenCC
+
+on:
+  schedule:
+    - cron: '23 10 * * 1'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check latest upstream tag
+        id: check
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          output="$(./scripts/check-upstream-version.sh 2>&1)"
+          status=$?
+          set -e
+          echo "$output"
+          latest="$(./scripts/latest-opencc-version.sh)"
+          echo "latest=${latest}" >> "$GITHUB_OUTPUT"
+          {
+            echo 'output<<EOF'
+            echo "$output"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+          exit "$status"
+      - name: Open tracking issue
+        if: steps.check.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const latest = `${{ steps.check.outputs.latest }}`;
+            const title = `OpenCC ${latest} is available`;
+            try {
+              await github.rest.issues.createLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'upstream-opencc',
+                color: '0e8a16',
+                description: 'Tracks upstream BYVoid/OpenCC releases'
+              });
+            } catch (error) {
+              if (error.status !== 422) throw error;
+            }
+            const existing = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'upstream-opencc'
+            });
+            if (existing.some(issue => issue.title === title)) return;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['upstream-opencc'],
+              body: [
+                'The scheduled OpenCC upstream check found a newer release.',
+                '',
+                '```text',
+                `${{ steps.check.outputs.output }}`,
+                '```',
+                '',
+                'Update `OPENCC_VERSION`, run the build workflow for amd64/arm64, and publish a new tarball release.'
+              ].join('\n')
+            });
