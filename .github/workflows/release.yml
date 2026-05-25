@@ -13,11 +13,14 @@ on:
         required: false
       release_tag:
         description: Release tag to upload artifacts to
-        default: v1.3.1-uscc101.1
+        default: v1.3.1-powerivq.1
         required: true
   push:
     tags:
       - 'v*'
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -32,7 +35,7 @@ jobs:
           - arch: arm64
             platform: linux/arm64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: docker/setup-qemu-action@v4
       - uses: docker/setup-buildx-action@v4
       - name: Resolve OpenCC inputs

@@ -78,14 +78,14 @@ Release workflow inputs:
 
 - `opencc_version`: version without the `ver.` prefix, for artifact naming.
 - `opencc_ref`: optional upstream git ref/tag/SHA. Defaults to `ver.<version>`.
-- `release_tag`: this repo's release tag, for example `v1.3.1-uscc101.1`.
+- `release_tag`: this repo's release tag, for example `v1.3.1-powerivq.1`.
 
 ## Consume From WordPress Alpine Image
 
 ```Dockerfile
 ARG TARGETARCH
 ARG OPENCC_VERSION=1.3.1
-ARG OPENCC_RELEASE=v1.3.1-uscc101.1
+ARG OPENCC_RELEASE=v1.3.1-powerivq.1
 RUN set -eux; \
     case "$TARGETARCH" in \
       amd64) opencc_arch=amd64 ;; \
